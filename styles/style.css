@@ -1,0 +1,32 @@
+#calculatorOutline {
+    min-width:300px;
+    display:block;
+}
+
+body {
+    font: 40pt arial, sans-serif;
+}
+
+#display {
+    min-width:300px !important;
+    height: 75px !important;
+    line-height:75px;
+}
+
+#clear {
+    width:300px !important;
+}
+
+#calculatorOutline div {
+    width:300px;
+    height:375px;
+}
+
+#calculatorOutline div div {
+    display:block;
+    float: left;
+    width:75px;
+    height:75px;
+    text-align: center;
+    line-height: 75px;
+}
