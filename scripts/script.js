@@ -6,6 +6,7 @@ let toBeDeleted = [];
 let divsAndMults;
 let plusAndMinus;
 let numbers;
+
 for(let i = 0; i < buttons.length; i++){
     if('value' in buttons[i].dataset) {
         if(buttons[i].dataset['value'] == '/')
@@ -20,10 +21,12 @@ for(let i = 0; i < buttons.length; i++){
 backButton.addEventListener('click',buttonClick);
 backButton.addEventListener('click',back);
 
+//deletes the last character on the display (triggered by the back button)
 function back() {
     display.textContent = display.textContent.substr(0, display.textContent.length-1);
 }
 
+//changes button's colors when they're clicked
 function buttonClick() {
     if(this.getAttribute('data-value') != '=')
         display.textContent += this.getAttribute('data-value');
@@ -33,15 +36,16 @@ function buttonClick() {
     setDisplayWidth();
 }
 
+//after a bit, the color will reset to normal
 function resetColor(button) {
     button.style.background = '#f5f5f5';
     button.style.color = '#5F6368';
 }
 
 function parseDisplay() {
-    console.log(display.clientWidth)
     refreshPositions();
     
+    //fixes decimal points without a 0 before them
     let lastNumIndex = 0;
     for(let i = 0; i < numbers.length; i++){
         if(display.textContent.indexOf(numbers[i], lastNumIndex) == -1){
@@ -51,6 +55,7 @@ function parseDisplay() {
     }
     refreshPositions();
 
+    //performs division and multiplication on the displays string
     while(divsAndMults.length>0) {
         let operation = display.textContent.charAt(divsAndMults[0]);
         let leftNumber = findNumber(divsAndMults[0], display.textContent, 'l', numbers);
@@ -67,6 +72,7 @@ function parseDisplay() {
         reconstructString(value, leftNumber+operation+rightNumber);
     }
 
+    //then performs the addition and subtraction operations
     while(plusAndMinus.length>0) {
         let operation = display.textContent.charAt(plusAndMinus[0]);
         let leftNumber = findNumber(plusAndMinus[0], display.textContent, 'l', numbers);
@@ -82,19 +88,16 @@ function parseDisplay() {
         }
         reconstructString(value, leftNumber+operation+rightNumber);
     }
-    console.log(isOverflown(display));
-
-
-    
-    console.table(numbers);
 }
 
+//refreshes the numbers/divs/mults/pluses/minuses index positions
 function refreshPositions() {
     numbers = findNumbers();
     divsAndMults = (indexOfAll(display.textContent, '*').concat(indexOfAll(display.textContent,'/'))).sort();
     plusAndMinus = (indexOfAll(display.textContent, '+').concat(indexOfAll(display.textContent, '-'))).sort();
 }
 
+//fixes up the display's string if an operation has been performed
 function reconstructString(value, stringToReplace) {
     let string = display.textContent;
     let a = findNumbers();
@@ -102,6 +105,9 @@ function reconstructString(value, stringToReplace) {
     refreshPositions();
 }
 
+//finds a number from the array numbers closest to the index supplied within the
+//string supplied and the specified direction (lower than the index is preferred
+//or higher than the index is preferred)
 function findNumber (index, string, dir, numbers){
     let lastNumIndex = 0;
     switch(dir) {
@@ -122,6 +128,7 @@ function findNumber (index, string, dir, numbers){
     }
 }
 
+//finds all terms within an expression
 function findNumbers (){
     let numStart = 0;
     let numEnd = 0;
@@ -150,6 +157,7 @@ function findNumbers (){
     return numbers;
 }
 
+//finds all indices of a string within another string
 function indexOfAll (stringToSearch, stringSearchedFor) {
     let foundLocations = [];
     let pos = 0;
@@ -180,19 +188,10 @@ function centerCalc() {
     backButton.style.left = divButton.getBoundingClientRect().right+'px';
 }
 
-centerCalc();
-setDisplayWidth();
-window.onresize = centerCalc;
-
-
-function isOverflown(element) {
-    return element.clientWidth > 300;
-    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
-}
-
+//Changes the look of the display based on how wide it is as well as the window's size
 function setDisplayWidth() {
     display.parentElement.style.width = '300px';
-    if(isOverflown(display)) {
+    if(display.clientWidth > 300) {
         display.parentElement.style.width = '';
         display.parentElement.style.textAlign = 'center';
         display.parentElement.style.marginLeft = '';
@@ -209,3 +208,45 @@ function setDisplayWidth() {
         display.parentElement.style.marginLeft = document.querySelector('#calculatorOutline').firstElementChild.style.marginLeft = ((window.innerWidth-300)/2) + 'px';
     }
 }
+
+//Keyboard support!
+document.addEventListener('keydown', (event) => {
+    switch(event.keyCode) {
+        case 107:case 187:case 13:
+            if(event.shiftKey || event.keyCode == 107) findAndClick('+')
+            else findAndClick('=')
+            break;
+        case 104:case 56:
+            if(event.keyCode==56 && event.shiftKey) findAndClick('*');
+            else findAndClick('8'); 
+            break;
+        case 8: backButton.click();break;
+        case 189:case 109:findAndClick('-');break;
+        case 110:findAndClick('.');break;
+        case 106:findAndClick('*');break;
+        case 111:findAndClick('/');break;
+        case 191: if(!event.shiftKey) findAndClick('/');break;
+        case 32:findAndClick('clear');break;        
+        case 96:case 48:findAndClick('0');break;
+        case 97:case 49:findAndClick('1');break;
+        case 98:case 50:findAndClick('2');break;
+        case 99:case 51:findAndClick('3');break;
+        case 100:case 52:findAndClick('4');break;
+        case 101:case 53:findAndClick('5');break;
+        case 102:case 54:findAndClick('6');break;
+        case 103:case 55:findAndClick('7');break;        
+        case 105:case 57:findAndClick('9');break;
+    }
+})
+
+//helper function to find button based on data-value value
+function findAndClick(value) {
+    for(index in buttons) {
+        if(buttons[index].dataset && buttons[index].dataset.length!=0 && buttons[index].dataset['value'] == value || buttons[index].id==value)
+            buttons[index].click();
+    }
+}
+
+//quick centering of the calculator on page load as well as if the window size is changed
+centerCalc();
+window.onresize = centerCalc;
