@@ -3,8 +3,7 @@ const display = document.querySelector('#display span');
 let divButton;
 const backButton = document.querySelector('#back');
 let toBeDeleted = [];
-let divsAndMults;
-let plusAndMinus;
+let operations;
 let numbers;
 
 for(let i = 0; i < buttons.length; i++){
@@ -44,64 +43,63 @@ function resetColor(button) {
 
 function parseDisplay() {
     refreshPositions();
-    
     //fixes decimal points without a 0 before them
     let lastNumIndex = 0;
     for(let i = 0; i < numbers.length; i++){
         if(display.textContent.indexOf(numbers[i], lastNumIndex) == -1){
             display.textContent = display.textContent.substring(0,lastNumIndex) + '0' + display.textContent.substring(lastNumIndex,);
         }
+        if(display.textContent.indexOf('0' + numbers[i], lastNumIndex) != -1)
+            display.textContent = display.textContent.substring(0, lastNumIndex) + display.textContent.substring(lastNumIndex+1,);
         lastNumIndex += String(numbers[i]).length + 1;
     }
     refreshPositions();
-
-    //performs division and multiplication on the displays string
-    while(divsAndMults.length>0) {
-        let operation = display.textContent.charAt(divsAndMults[0]);
-        let leftNumber = findNumber(divsAndMults[0], display.textContent, 'l', numbers);
-        let rightNumber = findNumber(divsAndMults[0], display.textContent,  'r', numbers);
-        let value;
-        switch(operation) {
-            case '/':
-                value = leftNumber/rightNumber;    
+    
+    while(operations.length > 0) {
+        for(index in operations) {
+            let value = '';
+            if(display.textContent[operations[index]] == '*' || display.textContent[operations[index]] == '/' || (display.textContent.indexOf('*') == -1 && display.textContent.indexOf('/') == -1)) {
+                switch(display.textContent[operations[index]]) {
+                    case '*':
+                        value = numbers[index] * numbers[Number(index)+1];
+                        break;
+                    case '/':
+                        value = numbers[index] / numbers[Number(index)+1];
+                        break;
+                    case '+':
+                        value = numbers[index] + numbers[Number(index)+1];
+                        break;
+                    case '-':
+                        value = numbers[index] - numbers[Number(index)+1];
+                }
+                const stringBeingReplaced = numbers[index] + display.textContent.charAt(operations[index]) + numbers[Number(index)+1];
+                display.textContent =   display.textContent.substring(0, display.textContent.indexOf(stringBeingReplaced))
+                                        + value + display.textContent.substring(display.textContent.indexOf(stringBeingReplaced) + stringBeingReplaced.length,);
+                refreshPositions();
+                index = 0;
                 break;
-            case '*':
-                value = leftNumber * rightNumber;
-                break;
+            }
         }
-        reconstructString(value, leftNumber+operation+rightNumber);
-    }
-
-    //then performs the addition and subtraction operations
-    while(plusAndMinus.length>0) {
-        let operation = display.textContent.charAt(plusAndMinus[0]);
-        let leftNumber = findNumber(plusAndMinus[0], display.textContent, 'l', numbers);
-        let rightNumber = findNumber(plusAndMinus[0], display.textContent,  'r', numbers);
-        let value;
-        switch(operation) {
-            case '+':
-                value = leftNumber+rightNumber;
-                break;
-            case '-':
-                value = leftNumber-rightNumber;
-            break;
-        }
-        reconstructString(value, leftNumber+operation+rightNumber);
     }
 }
 
 //refreshes the numbers/divs/mults/pluses/minuses index positions
 function refreshPositions() {
-    numbers = findNumbers();
-    divsAndMults = (indexOfAll(display.textContent, '*').concat(indexOfAll(display.textContent,'/'))).sort();
-    plusAndMinus = (indexOfAll(display.textContent, '+').concat(indexOfAll(display.textContent, '-'))).sort();
+    numbers = findNumbers(display.textContent);
+    operations = 
+    (indexOfAll(display.textContent, '*').concat(
+    indexOfAll(display.textContent, '/')).concat(
+    indexOfAll(display.textContent, '+')).concat(
+    indexOfAll(display.textContent, '-'))).sort((num1, num2) => {
+        return num1 > num2 ? 1 : -1;
+    })
 }
 
 //fixes up the display's string if an operation has been performed
-function reconstructString(value, stringToReplace) {
-    let string = display.textContent;
-    let a = findNumbers();
-    display.textContent = string.substring(0, string.indexOf(stringToReplace)) + value + string.substring(string.indexOf(stringToReplace)+stringToReplace.length,);
+function reconstructString(value, stringToReplace, stringSearched) {
+    let string = stringSearched;
+    let a = findNumbers(string);
+    stringSearched = string.substring(0, string.indexOf(stringToReplace)) + value + string.substring(string.indexOf(stringToReplace)+stringToReplace.length,);
     refreshPositions();
 }
 
@@ -129,28 +127,28 @@ function findNumber (index, string, dir, numbers){
 }
 
 //finds all terms within an expression
-function findNumbers (){
+function findNumbers (string){
     let numStart = 0;
     let numEnd = 0;
     let numbers = [];
-    for(let i = 0; i < display.textContent.length; i++) {
-        if(!/[0-9.]/.test(display.textContent.charAt(i))){
+    for(let i = 0; i < string.length; i++) {
+        if(!/[0-9.]/.test(string.charAt(i))){
             if(i==0) {
                 displayError();
                 break;
             }
-            else if(/[+-/*]/.test(display.textContent.charAt([i-1])))
+            else if(/[+-/*]/.test(string.charAt([i-1])))
                 displayError();
             else {
                 numEnd = i;
-                numbers.push(Number(display.textContent.substring(numStart,numEnd)));
-                if(display.textContent.length> i+1)
+                numbers.push(Number(string.substring(numStart,numEnd)));
+                if(string.length> i+1)
                     numStart = i+1;
             }
         }
-        else if(i == display.textContent.length-1){
+        else if(i == string.length-1){
             numEnd = i+1;
-            numbers.push(Number(display.textContent.substring(numStart,numEnd)));
+            numbers.push(Number(string.substring(numStart,numEnd)));
             
         }
     }
